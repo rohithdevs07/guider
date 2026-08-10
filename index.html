@@ -1,0 +1,4855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#050505">
+
+<title>Travel Guider</title>
+
+<!-- Leaflet map library -->
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+
+<style>
+/* =========================================================
+   TRAVEL GUIDER
+   Single-file HTML/CSS/JavaScript application
+   ========================================================= */
+
+:root {
+  --bg: #030506;
+  --bg2: #071217;
+  --card: rgba(12, 18, 21, 0.88);
+  --card2: #10191d;
+  --cyan: #00e5ff;
+  --blue: #168cff;
+  --green: #00e676;
+  --pink: #ff4081;
+  --yellow: #ffd740;
+  --white: #ffffff;
+  --muted: #91a1a8;
+  --border: rgba(0, 229, 255, 0.16);
+  --shadow: 0 20px 60px rgba(0,0,0,.45);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--white);
+  font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+}
+
+/* =========================================================
+   ANIMATED SEA BACKGROUND
+   ========================================================= */
+
+.ocean {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -5;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(0,229,255,.08), transparent 30%),
+    radial-gradient(circle at 80% 70%, rgba(0,130,255,.07), transparent 35%),
+    linear-gradient(180deg, #020303, #031016 70%, #020303);
+}
+
+.wave {
+  position: absolute;
+  width: 180%;
+  height: 180px;
+  left: -40%;
+  border-radius: 45%;
+  border-top: 2px solid rgba(0,229,255,.13);
+  background: rgba(0,229,255,.018);
+  filter: blur(.3px);
+}
+
+.wave1 {
+  bottom: 8%;
+  animation: waveMove 12s linear infinite;
+}
+
+.wave2 {
+  bottom: 18%;
+  opacity: .65;
+  animation: waveMove 17s linear infinite reverse;
+}
+
+.wave3 {
+  bottom: 30%;
+  opacity: .35;
+  animation: waveMove 23s linear infinite;
+}
+
+@keyframes waveMove {
+  from {
+    transform: translateX(-12%) rotate(2deg);
+  }
+  50% {
+    transform: translateX(8%) rotate(-2deg);
+  }
+  to {
+    transform: translateX(-12%) rotate(2deg);
+  }
+}
+
+/* =========================================================
+   LOGIN
+   ========================================================= */
+
+.auth-screen {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 25px;
+}
+
+.auth-card {
+  width: min(440px, 100%);
+  background: rgba(4, 9, 11, .94);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  padding: 34px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(20px);
+}
+
+.logo-large {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.flight-logo {
+  width: 82px;
+  height: 82px;
+  margin: auto;
+  border-radius: 25px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 40px;
+  background:
+    linear-gradient(145deg, #06151b, #020304);
+  border: 1px solid rgba(0,229,255,.35);
+  box-shadow:
+    0 0 30px rgba(0,229,255,.18),
+    inset 0 0 25px rgba(0,229,255,.05);
+}
+
+.logo-large h1 {
+  margin: 15px 0 4px;
+  font-size: 30px;
+}
+
+.logo-large p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.auth-tabs button {
+  flex: 1;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  cursor: pointer;
+}
+
+.btn {
+  padding: 13px 18px;
+  border-radius: 13px;
+  color: white;
+  background: #172125;
+  border: 1px solid rgba(255,255,255,.08);
+  transition: .2s;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0,229,255,.4);
+}
+
+.btn-primary {
+  color: #001014;
+  background: linear-gradient(135deg, var(--cyan), #56f4ff);
+  font-weight: bold;
+}
+
+.btn-danger {
+  background: rgba(255,64,81,.12);
+  color: #ff8090;
+  border-color: rgba(255,64,81,.2);
+}
+
+.input-group {
+  margin-bottom: 15px;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 7px;
+  color: #c7d1d5;
+  font-size: 14px;
+}
+
+.input {
+  width: 100%;
+  padding: 14px 15px;
+  color: white;
+  background: #0b1114;
+  border: 1px solid #1b2a30;
+  outline: none;
+  border-radius: 13px;
+}
+
+.input:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(0,229,255,.07);
+}
+
+.auth-message {
+  min-height: 22px;
+  color: #ff7182;
+  font-size: 13px;
+  margin: 8px 0;
+}
+
+/* =========================================================
+   APP
+   ========================================================= */
+
+#app {
+  display: none;
+  min-height: 100vh;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 25px;
+  background: rgba(2,5,6,.86);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(18px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-weight: 800;
+  letter-spacing: .4px;
+}
+
+.brand-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: #071217;
+  border: 1px solid rgba(0,229,255,.3);
+}
+
+.brand-name {
+  color: white;
+}
+
+.brand-name span {
+  color: var(--cyan);
+}
+
+.top-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #00bcd4, #1565c0);
+  font-weight: bold;
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.layout {
+  display: flex;
+  min-height: calc(100vh - 72px);
+}
+
+.sidebar {
+  position: sticky;
+  top: 72px;
+  width: 245px;
+  height: calc(100vh - 72px);
+  padding: 20px 15px;
+  border-right: 1px solid var(--border);
+  background: rgba(3,7,8,.72);
+}
+
+.nav-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 15px;
+  margin-bottom: 7px;
+  border-radius: 13px;
+  background: transparent;
+  color: #aab7bc;
+  text-align: left;
+  transition: .2s;
+}
+
+.nav-item:hover,
+.nav-item.active {
+  color: white;
+  background: rgba(0,229,255,.09);
+}
+
+.nav-item.active {
+  border-left: 3px solid var(--cyan);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 28px;
+}
+
+.page {
+  display: none;
+}
+
+.page.active {
+  display: block;
+}
+
+/* =========================================================
+   HOME
+   ========================================================= */
+
+.hero {
+  min-height: 310px;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  padding: 35px;
+  background:
+    radial-gradient(circle at 90% 10%, rgba(0,229,255,.14), transparent 35%),
+    linear-gradient(135deg, rgba(10,25,29,.94), rgba(3,7,8,.94));
+  position: relative;
+  overflow: hidden;
+}
+
+.hero:after {
+  content: "✈";
+  position: absolute;
+  right: 50px;
+  bottom: 5px;
+  font-size: 150px;
+  opacity: .035;
+  transform: rotate(-15deg);
+}
+
+.hero h2 {
+  font-size: clamp(30px, 5vw, 54px);
+  margin: 10px 0;
+  max-width: 700px;
+}
+
+.hero h2 span {
+  color: var(--cyan);
+}
+
+.hero p {
+  color: var(--muted);
+  max-width: 650px;
+  line-height: 1.7;
+}
+
+.search-box {
+  display: flex;
+  max-width: 650px;
+  margin-top: 25px;
+  gap: 10px;
+}
+
+.search-box input {
+  flex: 1;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 32px 0 17px;
+}
+
+.section-title h2 {
+  margin: 0;
+}
+
+.section-title small {
+  color: var(--muted);
+}
+
+/* =========================================================
+   CARDS
+   ========================================================= */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0,0,0,.18);
+}
+
+.card-body {
+  padding: 16px;
+}
+
+.destination-image {
+  height: 150px;
+  display: flex;
+  align-items: flex-end;
+  padding: 16px;
+  font-size: 48px;
+  background:
+    radial-gradient(circle at 70% 25%, rgba(255,255,255,.2), transparent 20%),
+    linear-gradient(135deg, #123e46, #061015);
+}
+
+.destination-image.green {
+  background: linear-gradient(135deg,#0b493d,#05110e);
+}
+
+.destination-image.orange {
+  background: linear-gradient(135deg,#6a3511,#120905);
+}
+
+.destination-image.purple {
+  background: linear-gradient(135deg,#45235d,#09050d);
+}
+
+.destination-image.blue {
+  background: linear-gradient(135deg,#123e72,#030c16);
+}
+
+.card h3 {
+  margin: 0 0 7px;
+}
+
+.card p {
+  color: var(--muted);
+  line-height: 1.5;
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.small-btn {
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: #162125;
+  color: white;
+  font-size: 12px;
+}
+
+/* =========================================================
+   STATE / DISTRICT
+   ========================================================= */
+
+.breadcrumb {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  flex-wrap: wrap;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+
+.breadcrumb button {
+  background: none;
+  color: var(--cyan);
+  padding: 0;
+}
+
+.state-card {
+  cursor: pointer;
+}
+
+.state-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(0,229,255,.45);
+}
+
+.state-card {
+  transition: .2s;
+}
+
+/* =========================================================
+   MAP
+   ========================================================= */
+
+.map-wrapper {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  background: #081013;
+}
+
+#map {
+  width: 100%;
+  height: 520px;
+}
+
+.map-tools {
+  padding: 15px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* =========================================================
+   PROFILE
+   ========================================================= */
+
+.profile-header {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  padding: 25px;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.profile-big {
+  width: 100px;
+  height: 100px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  font-size: 35px;
+  background: linear-gradient(135deg,#00acc1,#1565c0);
+}
+
+.profile-big img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-stats {
+  display: flex;
+  gap: 25px;
+  margin-top: 13px;
+}
+
+.stat strong {
+  display: block;
+  font-size: 20px;
+}
+
+.stat span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* =========================================================
+   POSTS
+   ========================================================= */
+
+.post-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 18px;
+}
+
+.post {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.post-media {
+  width: 100%;
+  height: 300px;
+  background: #050708;
+  object-fit: cover;
+  display: block;
+}
+
+.post-content {
+  padding: 15px;
+}
+
+.post-user {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 12px;
+}
+
+.post-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 13px;
+}
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #162125;
+  color: white;
+}
+
+/* =========================================================
+   MODALS
+   ========================================================= */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  background: rgba(0,0,0,.76);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  backdrop-filter: blur(8px);
+}
+
+.modal.show {
+  display: flex;
+}
+
+.modal-card {
+  width: min(620px,100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #071012;
+  border: 1px solid var(--border);
+  border-radius: 23px;
+  padding: 25px;
+  box-shadow: var(--shadow);
+}
+
+.modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.close {
+  background: #162125;
+  color: white;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+}
+
+.file-drop {
+  padding: 25px;
+  text-align: center;
+  border: 1px dashed rgba(0,229,255,.4);
+  border-radius: 15px;
+  background: rgba(0,229,255,.03);
+  margin-bottom: 15px;
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+.mobile-nav {
+  display: none;
+}
+
+@media(max-width: 850px) {
+
+  .sidebar {
+    display: none;
+  }
+
+  .main {
+    padding: 17px;
+    padding-bottom: 90px;
+  }
+
+  .topbar {
+    padding: 0 15px;
+  }
+
+  .hero {
+    padding: 25px;
+  }
+
+  .mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 2000;
+    height: 68px;
+    background: rgba(3,7,8,.96);
+    border-top: 1px solid var(--border);
+    justify-content: space-around;
+    align-items: center;
+  }
+
+  .mobile-nav button {
+    background: none;
+    color: #85949a;
+    font-size: 11px;
+  }
+
+  .mobile-nav button.active {
+    color: var(--cyan);
+  }
+
+  .mobile-nav span {
+    display: block;
+    font-size: 20px;
+    margin-bottom: 2px;
+  }
+
+  .search-box {
+    flex-direction: column;
+  }
+
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .profile-stats {
+    justify-content: center;
+  }
+
+  #map {
+    height: 400px;
+  }
+}
+
+/* =========================================================
+   EMPTY STATE
+   ========================================================= */
+
+.empty {
+  padding: 50px 20px;
+  text-align: center;
+  color: var(--muted);
+  border: 1px dashed #1c333a;
+  border-radius: 20px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 5px 8px;
+  border-radius: 7px;
+  font-size: 11px;
+  color: var(--cyan);
+  background: rgba(0,229,255,.08);
+  margin-bottom: 8px;
+}
+
+.toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 9000;
+  background: #101a1e;
+  border: 1px solid rgba(0,229,255,.3);
+  color: white;
+  padding: 13px 17px;
+  border-radius: 12px;
+  transform: translateY(100px);
+  opacity: 0;
+  transition: .3s;
+}
+
+.toast.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+</style>
+</head>
+
+<body>
+
+<!-- =======================================================
+     SEA BACKGROUND
+     ======================================================= -->
+
+<div class="ocean">
+  <div class="wave wave1"></div>
+  <div class="wave wave2"></div>
+  <div class="wave wave3"></div>
+</div>
+
+<!-- =======================================================
+     AUTH SCREEN
+     ======================================================= -->
+
+<section id="authScreen" class="auth-screen">
+
+  <div class="auth-card">
+
+    <div class="logo-large">
+      <div class="flight-logo">✈</div>
+      <h1>Travel Guider</h1>
+      <p>Your personal travel partner</p>
+    </div>
+
+    <div class="auth-tabs">
+      <button
+        id="loginTab"
+        class="btn btn-primary"
+        onclick="showAuth('login')">
+        Login
+      </button>
+
+      <button
+        id="signupTab"
+        class="btn"
+        onclick="showAuth('signup')">
+        Sign Up
+      </button>
+    </div>
+
+    <div id="loginForm">
+
+      <div class="input-group">
+        <label>Username</label>
+        <input
+          id="loginUsername"
+          class="input"
+          placeholder="Enter username">
+      </div>
+
+      <div class="input-group">
+        <label>Password</label>
+        <input
+          id="loginPassword"
+          type="password"
+          class="input"
+          placeholder="Enter password">
+      </div>
+
+      <div id="loginMessage" class="auth-message"></div>
+
+      <button
+        class="btn btn-primary"
+        style="width:100%"
+        onclick="login()">
+        LOGIN TO TRAVEL GUIDER
+      </button>
+
+    </div>
+
+    <div id="signupForm" style="display:none">
+
+      <div class="input-group">
+        <label>Username</label>
+        <input
+          id="signupUsername"
+          class="input"
+          placeholder="Choose username">
+      </div>
+
+      <div class="input-group">
+        <label>Password</label>
+        <input
+          id="signupPassword"
+          type="password"
+          class="input"
+          placeholder="Create password">
+      </div>
+
+      <div class="input-group">
+        <label>Your name</label>
+        <input
+          id="signupName"
+          class="input"
+          placeholder="Your display name">
+      </div>
+
+      <div id="signupMessage" class="auth-message"></div>
+
+      <button
+        class="btn btn-primary"
+        style="width:100%"
+        onclick="signup()">
+        CREATE ACCOUNT
+      </button>
+
+    </div>
+
+    <p style="color:#68777c;font-size:11px;text-align:center;margin-top:20px">
+      Demo accounts are stored locally in this browser.
+    </p>
+
+  </div>
+
+</section>
+
+
+<!-- =======================================================
+     MAIN APP
+     ======================================================= -->
+
+<div id="app">
+
+  <header class="topbar">
+
+    <div class="brand">
+      <div class="brand-icon">✈</div>
+      <div class="brand-name">
+        Travel <span>Guider</span>
+      </div>
+    </div>
+
+    <div class="top-user">
+
+      <span id="topUsername"
+            style="color:#b8c5c9;font-size:14px">
+      </span>
+
+      <div id="topAvatar" class="avatar">
+        TG
+      </div>
+
+    </div>
+
+  </header>
+
+
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar">
+
+      <button
+        class="nav-item active"
+        data-page="home"
+        onclick="navigate('home')">
+        🏠 Home
+      </button>
+
+      <button
+        class="nav-item"
+        data-page="explore"
+        onclick="navigate('explore')">
+        🧭 Explore India
+      </button>
+
+      <button
+        class="nav-item"
+        data-page="map"
+        onclick="navigate('map')">
+        🗺️ Map
+      </button>
+
+      <button
+        class="nav-item"
+        data-page="posts"
+        onclick="navigate('posts')">
+        📸 Travel Feed
+      </button>
+
+      <button
+        class="nav-item"
+        data-page="wishlist"
+        onclick="navigate('wishlist')">
+        ❤️ Wishlist
+      </button>
+
+      <button
+        class="nav-item"
+        data-page="itinerary"
+        onclick="navigate('itinerary')">
+        🗓️ My Itineraries
+      </button>
+
+      <button
+        class="nav-item"
+        data-page="profile"
+        onclick="navigate('profile')">
+        👤 Profile
+      </button>
+
+      <div style="height:20px"></div>
+
+      <button
+        class="nav-item"
+        onclick="openModal('addPlaceModal')">
+        ➕ Add Place
+      </button>
+
+      <button
+        class="nav-item"
+        onclick="openModal('postModal')">
+        📤 Upload Experience
+      </button>
+
+      <div style="position:absolute;bottom:20px;width:210px">
+
+        <button
+          class="nav-item"
+          onclick="logout()">
+          🚪 Logout
+        </button>
+
+      </div>
+
+    </aside>
+
+
+    <!-- MAIN -->
+
+    <main class="main">
+
+      <!-- HOME -->
+
+      <section id="page-home" class="page active">
+
+        <div class="hero">
+
+          <div class="badge">YOUR PERSONAL TRAVEL PARTNER</div>
+
+          <h2>
+            Explore India.<br>
+            <span>Travel Your Way.</span>
+          </h2>
+
+          <p>
+            Discover historical places, local food, cultural events,
+            hidden destinations and experiences recommended for you.
+            Save your trips and share your travel memories.
+          </p>
+
+          <div class="search-box">
+
+            <input
+              id="globalSearch"
+              class="input"
+              placeholder="Search state, district, place, food or event..."
+              onkeyup="globalSearch()">
+
+            <button
+              class="btn btn-primary"
+              onclick="globalSearch()">
+              🔍 Search
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <div class="section-title">
+          <h2>Popular Experiences</h2>
+          <small>Start exploring</small>
+        </div>
+
+        <div id="popularGrid" class="grid"></div>
+
+
+        <div class="section-title">
+          <h2>Tamil Nadu Highlights</h2>
+          <small>History & culture</small>
+        </div>
+
+        <div id="tnGrid" class="grid"></div>
+
+
+        <div class="section-title">
+          <h2>Upcoming Cultural Events</h2>
+          <small>Tamil Nadu</small>
+        </div>
+
+        <div id="eventGrid" class="grid"></div>
+
+      </section>
+
+
+      <!-- EXPLORE -->
+
+      <section id="page-explore" class="page">
+
+        <div class="section-title">
+          <h2>🇮🇳 Explore India</h2>
+          <small id="stateCount"></small>
+        </div>
+
+        <div id="exploreContent"></div>
+
+      </section>
+
+
+      <!-- MAP -->
+
+      <section id="page-map" class="page">
+
+        <div class="section-title">
+          <h2>🗺️ Travel Map</h2>
+          <small>Explore places</small>
+        </div>
+
+        <div class="map-wrapper">
+
+          <div class="map-tools">
+
+            <button
+              class="btn btn-primary"
+              onclick="findMyLocation()">
+              📍 My Location
+            </button>
+
+            <button
+              class="btn"
+              onclick="showIndia()">
+              🇮🇳 India
+            </button>
+
+            <button
+              class="btn"
+              onclick="openModal('addPlaceModal')">
+              ➕ Add Place
+            </button>
+
+          </div>
+
+          <div id="map"></div>
+
+        </div>
+
+      </section>
+
+
+      <!-- POSTS -->
+
+      <section id="page-posts" class="page">
+
+        <div class="section-title">
+
+          <h2>📸 Travel Community</h2>
+
+          <button
+            class="btn btn-primary"
+            onclick="openModal('postModal')">
+            + Post
+          </button>
+
+        </div>
+
+        <div id="postsGrid" class="post-grid"></div>
+
+      </section>
+
+
+      <!-- WISHLIST -->
+
+      <section id="page-wishlist" class="page">
+
+        <div class="section-title">
+          <h2>❤️ My Wishlist</h2>
+          <small>Places you want to visit</small>
+        </div>
+
+        <div id="wishlistGrid" class="grid"></div>
+
+      </section>
+
+
+      <!-- ITINERARY -->
+
+      <section id="page-itinerary" class="page">
+
+        <div class="section-title">
+
+          <h2>🗓️ My Itineraries</h2>
+
+          <button
+            class="btn btn-primary"
+            onclick="openModal('itineraryModal')">
+            + New Trip
+          </button>
+
+        </div>
+
+        <div id="itineraryGrid" class="grid"></div>
+
+      </section>
+
+
+      <!-- PROFILE -->
+
+      <section id="page-profile" class="page">
+
+        <div id="profileContent"></div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+
+  <!-- MOBILE NAV -->
+
+  <nav class="mobile-nav">
+
+    <button
+      data-page="home"
+      class="active"
+      onclick="navigate('home')">
+      <span>🏠</span>
+      Home
+    </button>
+
+    <button
+      data-page="explore"
+      onclick="navigate('explore')">
+      <span>🧭</span>
+      Explore
+    </button>
+
+    <button
+      onclick="openModal('postModal')">
+      <span>➕</span>
+      Post
+    </button>
+
+    <button
+      data-page="wishlist"
+      onclick="navigate('wishlist')">
+      <span>❤️</span>
+      Saved
+    </button>
+
+    <button
+      data-page="profile"
+      onclick="navigate('profile')">
+      <span>👤</span>
+      Profile
+    </button>
+
+  </nav>
+
+</div>
+
+
+<!-- =======================================================
+     POST MODAL
+     ======================================================= -->
+
+<div id="postModal" class="modal">
+
+  <div class="modal-card">
+
+    <div class="modal-head">
+
+      <h2>📸 Share Your Experience</h2>
+
+      <button
+        class="close"
+        onclick="closeModal('postModal')">
+        ×
+      </button>
+
+    </div>
+
+    <div class="file-drop">
+
+      <p>Upload your travel photo or video</p>
+
+      <input
+        id="postFile"
+        type="file"
+        accept="image/*,video/*"
+        onchange="previewPostFile(event)">
+
+    </div>
+
+    <div id="postPreview"></div>
+
+    <div class="input-group">
+
+      <label>Location</label>
+
+      <input
+        id="postLocation"
+        class="input"
+        placeholder="Example: Thanjavur Big Temple">
+
+    </div>
+
+    <div class="input-group">
+
+      <label>Caption</label>
+
+      <textarea
+        id="postCaption"
+        class="input"
+        rows="4"
+        placeholder="Tell everyone about your experience..."></textarea>
+
+    </div>
+
+    <button
+      class="btn btn-primary"
+      style="width:100%"
+      onclick="createPost()">
+      🚀 POST EXPERIENCE
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- =======================================================
+     ADD PLACE MODAL
+     ======================================================= -->
+
+<div id="addPlaceModal" class="modal">
+
+  <div class="modal-card">
+
+    <div class="modal-head">
+
+      <h2>📍 Add a Place</h2>
+
+      <button
+        class="close"
+        onclick="closeModal('addPlaceModal')">
+        ×
+      </button>
+
+    </div>
+
+    <div class="input-group">
+
+      <label>Place Name</label>
+
+      <input
+        id="placeName"
+        class="input"
+        placeholder="Example: Arun's Favourite Cafe">
+
+    </div>
+
+    <div class="input-group">
+
+      <label>Category</label>
+
+      <select id="placeCategory" class="input">
+
+        <option>Tourist Attraction</option>
+        <option>Historical</option>
+        <option>Temple</option>
+        <option>Restaurant</option>
+        <option>Food Shop</option>
+        <option>Cafe</option>
+        <option>Hotel</option>
+        <option>Beach</option>
+        <option>Hill Station</option>
+        <option>Nature</option>
+        <option>Shopping</option>
+        <option>Other</option>
+
+      </select>
+
+    </div>
+
+    <div class="input-group">
+
+      <label>Description</label>
+
+      <textarea
+        id="placeDescription"
+        class="input"
+        rows="3"
+        placeholder="Tell other travelers about this place"></textarea>
+
+    </div>
+
+    <div class="input-group">
+
+      <label>Latitude</label>
+
+      <input
+        id="placeLat"
+        class="input"
+        placeholder="Example: 10.7870">
+
+    </div>
+
+    <div class="input-group">
+
+      <label>Longitude</label>
+
+      <input
+        id="placeLng"
+        class="input"
+        placeholder="Example: 79.1378">
+
+    </div>
+
+    <button
+      class="btn btn-primary"
+      style="width:100%"
+      onclick="addPlace()">
+      📍 SAVE PLACE
+    </button>
+
+  </div>
+
+</div>
+
+
+<!-- =======================================================
+     ITINERARY MODAL
+     ======================================================= -->
+
+<div id="itineraryModal" class="modal">
+
+  <div class="modal-card">
+
+    <div class="modal-head">
+
+      <h2>🗓️ Create Trip</h2>
+
+      <button
+        class="close"
+        onclick="closeModal('itineraryModal')">
+        ×
+      </button>
+
+    </div>
+
+    <div class="input-group">
+
+      <label>Trip Name</label>
+
+      <input
+        id="tripName"
+        class="input"
+        placeholder="Example: Tamil Nadu Heritage Trip">
+
+    </div>
+
+    <div class="input-group">
+
+      <label>Destination</label>
+
+      <input
+        id="tripDestination"
+        class="input"
+        placeholder="Example: Thanjavur, Madurai">
+
+    </div>
+
+    <div class="input-group">
+
+      <label>Travel Date</label>
+
+      <input
+        id="tripDate"
+        type="date"
+        class="input">
+
+    </div>
+
+    <div class="input-group">
+
+      <label>Notes</label>
+
+      <textarea
+        id="tripNotes"
+        class="input"
+        rows="4"
+        placeholder="Places you want to visit..."></textarea>
+
+    </div>
+
+    <button
+      class="btn btn-primary"
+      style="width:100%"
+      onclick="createItinerary()">
+      🗓️ SAVE ITINERARY
+    </button>
+
+  </div>
+
+</div>
+
+
+<div id="toast" class="toast"></div>
+
+
+<!-- LEAFLET -->
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+
+<script>
+
+/* =========================================================
+   INDIA DATA
+   28 STATES
+   ========================================================= */
+
+const indiaStates = {
+
+  "Andhra Pradesh": [
+    "Alluri Sitharama Raju",
+    "Anakapalli",
+    "Anantapur",
+    "Annamayya",
+    "Bapatla",
+    "Chittoor",
+    "Dr. B. R. Ambedkar Konaseema",
+    "East Godavari",
+    "Eluru",
+    "Guntur",
+    "Kakinada",
+    "Krishna",
+    "Kurnool",
+    "Nandyal",
+    "NTR",
+    "Palnadu",
+    "Parvathipuram Manyam",
+    "Prakasam",
+    "Sri Potti Sriramulu Nellore",
+    "Sri Sathya Sai",
+    "Srikakulam",
+    "Tirupati",
+    "Visakhapatnam",
+    "Vizianagaram",
+    "West Godavari",
+    "YSR Kadapa"
+  ],
+
+  "Arunachal Pradesh": [
+    "Anjaw",
+    "Bichom",
+    "Changlang",
+    "Dibang Valley",
+    "East Kameng",
+    "East Siang",
+    "Itanagar Capital Region",
+    "Kamle",
+    "Keyi Panyor",
+    "Kra Daadi",
+    "Kurung Kumey",
+    "Lepa Rada",
+    "Lohit",
+    "Longding",
+    "Lower Dibang Valley",
+    "Lower Siang",
+    "Lower Subansiri",
+    "Namsai",
+    "Pakke-Kessang",
+    "Papum Pare",
+    "Shi-Yomi",
+    "Siang",
+    "Tawang",
+    "Tirap",
+    "Upper Siang",
+    "Upper Subansiri",
+    "West Kameng",
+    "West Siang"
+  ],
+
+  "Assam": [
+    "Baksa",
+    "Bajali",
+    "Barpeta",
+    "Biswanath",
+    "Bongaigaon",
+    "Cachar",
+    "Charaideo",
+    "Chirang",
+    "Darrang",
+    "Dhemaji",
+    "Dhubri",
+    "Dibrugarh",
+    "Dima Hasao",
+    "Goalpara",
+    "Golaghat",
+    "Hailakandi",
+    "Hojai",
+    "Jorhat",
+    "Kamrup",
+    "Kamrup Metropolitan",
+    "Karbi Anglong",
+    "Kokrajhar",
+    "Lakhimpur",
+    "Majuli",
+    "Morigaon",
+    "Nagaon",
+    "Nalbari",
+    "Sivasagar",
+    "Sonitpur",
+    "South Salmara-Mankachar",
+    "Tamulpur",
+    "Tinsukia",
+    "Udalguri",
+    "West Karbi Anglong"
+  ],
+
+  "Bihar": [
+    "Araria",
+    "Arwal",
+    "Aurangabad",
+    "Banka",
+    "Begusarai",
+    "Bhagalpur",
+    "Bhojpur",
+    "Buxar",
+    "Darbhanga",
+    "East Champaran",
+    "Gaya",
+    "Gopalganj",
+    "Jamui",
+    "Jehanabad",
+    "Kaimur",
+    "Katihar",
+    "Khagaria",
+    "Kishanganj",
+    "Lakhisarai",
+    "Madhepura",
+    "Madhubani",
+    "Munger",
+    "Muzaffarpur",
+    "Nalanda",
+    "Nawada",
+    "Patna",
+    "Purnia",
+    "Rohtas",
+    "Saharsa",
+    "Samastipur",
+    "Saran",
+    "Sheikhpura",
+    "Sheohar",
+    "Sitamarhi",
+    "Siwan",
+    "Supaul",
+    "Vaishali",
+    "West Champaran"
+  ],
+
+  "Chhattisgarh": [
+    "Balod",
+    "Baloda Bazar",
+    "Balrampur-Ramanujganj",
+    "Bastar",
+    "Bemetara",
+    "Bijapur",
+    "Bilaspur",
+    "Dantewada",
+    "Dhamtari",
+    "Durg",
+    "Gariaband",
+    "Gaurela-Pendra-Marwahi",
+    "Janjgir-Champa",
+    "Jashpur",
+    "Kabirdham",
+    "Kanker",
+    "Khairagarh-Chhuikhadan-Gandai",
+    "Kondagaon",
+    "Korba",
+    "Koriya",
+    "Mahasamund",
+    "Manendragarh-Chirmiri-Bharatpur",
+    "Mohla-Manpur-Ambagarh Chowki",
+    "Mungeli",
+    "Narayanpur",
+    "Raigarh",
+    "Raipur",
+    "Rajnandgaon",
+    "Sakti",
+    "Sarangarh-Bilaigarh",
+    "Sukma",
+    "Surajpur",
+    "Surguja"
+  ],
+
+  "Goa": [
+    "North Goa",
+    "South Goa"
+  ],
+
+  "Gujarat": [
+    "Ahmedabad",
+    "Amreli",
+    "Anand",
+    "Aravalli",
+    "Banaskantha",
+    "Bharuch",
+    "Bhavnagar",
+    "Botad",
+    "Chhota Udaipur",
+    "Dahod",
+    "Dang",
+    "Devbhoomi Dwarka",
+    "Gandhinagar",
+    "Gir Somnath",
+    "Jamnagar",
+    "Junagadh",
+    "Kachchh",
+    "Kheda",
+    "Mahisagar",
+    "Mehsana",
+    "Morbi",
+    "Narmada",
+    "Navsari",
+    "Panchmahal",
+    "Patan",
+    "Porbandar",
+    "Rajkot",
+    "Sabarkantha",
+    "Surat",
+    "Surendranagar",
+    "Tapi",
+    "Vadodara",
+    "Valsad"
+  ],
+
+  "Haryana": [
+    "Ambala",
+    "Bhiwani",
+    "Charkhi Dadri",
+    "Faridabad",
+    "Fatehabad",
+    "Gurugram",
+    "Hisar",
+    "Jhajjar",
+    "Jind",
+    "Kaithal",
+    "Karnal",
+    "Kurukshetra",
+    "Mahendragarh",
+    "Nuh",
+    "Palwal",
+    "Panchkula",
+    "Panipat",
+    "Rewari",
+    "Rohtak",
+    "Sirsa",
+    "Sonipat",
+    "Yamunanagar"
+  ],
+
+  "Himachal Pradesh": [
+    "Bilaspur",
+    "Chamba",
+    "Hamirpur",
+    "Kangra",
+    "Kinnaur",
+    "Kullu",
+    "Lahaul and Spiti",
+    "Mandi",
+    "Shimla",
+    "Sirmaur",
+    "Solan",
+    "Una"
+  ],
+
+  "Jharkhand": [
+    "Bokaro",
+    "Chatra",
+    "Deoghar",
+    "Dhanbad",
+    "Dumka",
+    "East Singhbhum",
+    "Garhwa",
+    "Giridih",
+    "Godda",
+    "Gumla",
+    "Hazaribagh",
+    "Jamtara",
+    "Khunti",
+    "Koderma",
+    "Latehar",
+    "Lohardaga",
+    "Pakur",
+    "Palamu",
+    "Ramgarh",
+    "Ranchi",
+    "Sahibganj",
+    "Seraikela Kharsawan",
+    "Simdega",
+    "West Singhbhum"
+  ],
+
+  "Karnataka": [
+    "Bagalkot",
+    "Ballari",
+    "Belagavi",
+    "Bengaluru Rural",
+    "Bengaluru Urban",
+    "Bidar",
+    "Chamarajanagar",
+    "Chikkaballapur",
+    "Chikkamagaluru",
+    "Chitradurga",
+    "Dakshina Kannada",
+    "Davanagere",
+    "Dharwad",
+    "Gadag",
+    "Hassan",
+    "Haveri",
+    "Kalaburagi",
+    "Kodagu",
+    "Kolar",
+    "Koppal",
+    "Mandya",
+    "Mysuru",
+    "Raichur",
+    "Ramanagara",
+    "Shivamogga",
+    "Tumakuru",
+    "Udupi",
+    "Uttara Kannada",
+    "Vijayanagara",
+    "Vijayapura",
+    "Yadgir"
+  ],
+
+  "Kerala": [
+    "Alappuzha",
+    "Ernakulam",
+    "Idukki",
+    "Kannur",
+    "Kasaragod",
+    "Kollam",
+    "Kottayam",
+    "Kozhikode",
+    "Malappuram",
+    "Palakkad",
+    "Pathanamthitta",
+    "Thiruvananthapuram",
+    "Thrissur",
+    "Wayanad"
+  ],
+
+  "Madhya Pradesh": [
+    "Agar Malwa",
+    "Alirajpur",
+    "Anuppur",
+    "Ashoknagar",
+    "Balaghat",
+    "Barwani",
+    "Betul",
+    "Bhind",
+    "Bhopal",
+    "Burhanpur",
+    "Chhatarpur",
+    "Chhindwara",
+    "Damoh",
+    "Datia",
+    "Dewas",
+    "Dhar",
+    "Dindori",
+    "Guna",
+    "Gwalior",
+    "Harda",
+    "Indore",
+    "Jabalpur",
+    "Jhabua",
+    "Katni",
+    "Khandwa",
+    "Khargone",
+    "Maihar",
+    "Mandla",
+    "Mandsaur",
+    "Mauganj",
+    "Morena",
+    "Narmadapuram",
+    "Narsinghpur",
+    "Neemuch",
+    "Niwari",
+    "Pandhurna",
+    "Panna",
+    "Raisen",
+    "Rajgarh",
+    "Ratlam",
+    "Rewa",
+    "Sagar",
+    "Satna",
+    "Sehore",
+    "Seoni",
+    "Shahdol",
+    "Shajapur",
+    "Sheopur",
+    "Shivpuri",
+    "Sidhi",
+    "Singrauli",
+    "Tikamgarh",
+    "Ujjain",
+    "Umaria",
+    "Vidisha"
+  ],
+
+  "Maharashtra": [
+    "Ahmednagar",
+    "Akola",
+    "Amravati",
+    "Beed",
+    "Bhandara",
+    "Buldhana",
+    "Chandrapur",
+    "Chhatrapati Sambhajinagar",
+    "Dhule",
+    "Dharashiv",
+    "Gadchiroli",
+    "Gondia",
+    "Hingoli",
+    "Jalgaon",
+    "Jalna",
+    "Kolhapur",
+    "Latur",
+    "Mumbai City",
+    "Mumbai Suburban",
+    "Nagpur",
+    "Nanded",
+    "Nandurbar",
+    "Nashik",
+    "Palghar",
+    "Parbhani",
+    "Pune",
+    "Raigad",
+    "Ratnagiri",
+    "Sangli",
+    "Satara",
+    "Sindhudurg",
+    "Solapur",
+    "Thane",
+    "Wardha",
+    "Washim",
+    "Yavatmal"
+  ],
+
+  "Manipur": [
+    "Bishnupur",
+    "Chandel",
+    "Churachandpur",
+    "Imphal East",
+    "Imphal West",
+    "Jiribam",
+    "Kakching",
+    "Kamjong",
+    "Kangpokpi",
+    "Noney",
+    "Pherzawl",
+    "Senapati",
+    "Tamenglong",
+    "Tengnoupal",
+    "Thoubal",
+    "Ukhrul"
+  ],
+
+  "Meghalaya": [
+    "East Garo Hills",
+    "East Jaintia Hills",
+    "East Khasi Hills",
+    "Eastern West Khasi Hills",
+    "North Garo Hills",
+    "Ri Bhoi",
+    "South Garo Hills",
+    "South West Garo Hills",
+    "South West Khasi Hills",
+    "West Garo Hills",
+    "West Jaintia Hills",
+    "West Khasi Hills"
+  ],
+
+  "Mizoram": [
+    "Aizawl",
+    "Champhai",
+    "Hnahthial",
+    "Khawzawl",
+    "Kolasib",
+    "Lawngtlai",
+    "Lunglei",
+    "Mamit",
+    "Saiha",
+    "Saitual",
+    "Serchhip"
+  ],
+
+  "Nagaland": [
+    "Chumoukedima",
+    "Dimapur",
+    "Kiphire",
+    "Kohima",
+    "Longleng",
+    "Mokokchung",
+    "Mon",
+    "Niuland",
+    "Noklak",
+    "Peren",
+    "Phek",
+    "Shamator",
+    "Tuensang",
+    "Tseminyu",
+    "Wokha",
+    "Zunheboto",
+    "Meluri"
+  ],
+
+  "Odisha": [
+    "Angul",
+    "Balangir",
+    "Balasore",
+    "Bargarh",
+    "Bhadrak",
+    "Boudh",
+    "Cuttack",
+    "Deogarh",
+    "Dhenkanal",
+    "Gajapati",
+    "Ganjam",
+    "Jagatsinghpur",
+    "Jajpur",
+    "Jharsuguda",
+    "Kalahandi",
+    "Kandhamal",
+    "Kendrapara",
+    "Kendujhar",
+    "Khordha",
+    "Koraput",
+    "Malkangiri",
+    "Mayurbhanj",
+    "Nabarangpur",
+    "Nayagarh",
+    "Nuapada",
+    "Puri",
+    "Rayagada",
+    "Sambalpur",
+    "Subarnapur",
+    "Sundargarh"
+  ],
+
+  "Punjab": [
+    "Amritsar",
+    "Barnala",
+    "Bathinda",
+    "Faridkot",
+    "Fatehgarh Sahib",
+    "Fazilka",
+    "Ferozepur",
+    "Gurdaspur",
+    "Hoshiarpur",
+    "Jalandhar",
+    "Kapurthala",
+    "Ludhiana",
+    "Malerkotla",
+    "Mansa",
+    "Moga",
+    "Pathankot",
+    "Patiala",
+    "Rupnagar",
+    "Sahibzada Ajit Singh Nagar",
+    "Sangrur",
+    "Shaheed Bhagat Singh Nagar",
+    "Sri Muktsar Sahib",
+    "Tarn Taran"
+  ],
+
+  "Rajasthan": [
+    "Ajmer",
+    "Alwar",
+    "Anupgarh",
+    "Balotra",
+    "Banswara",
+    "Baran",
+    "Barmer",
+    "Beawar",
+    "Bharatpur",
+    "Bhilwara",
+    "Bikaner",
+    "Bundi",
+    "Chittorgarh",
+    "Churu",
+    "Dausa",
+    "Deeg",
+    "Dholpur",
+    "Didwana-Kuchamana",
+    "Dudu",
+    "Dungarpur",
+    "Gangapur City",
+    "Hanumangarh",
+    "Jaipur",
+    "Jaisalmer",
+    "Jalore",
+    "Jhalawar",
+    "Jhunjhunu",
+    "Jodhpur",
+    "Karauli",
+    "Kekri",
+    "Khairthal-Tijara",
+    "Kota",
+    "Kotputli-Behror",
+    "Nagaur",
+    "Neem Ka Thana",
+    "Pali",
+    "Phalodi",
+    "Pratapgarh",
+    "Rajsamand",
+    "Salumbar",
+    "Sawai Madhopur",
+    "Shahpura",
+    "Sikar",
+    "Sirohi",
+    "Sri Ganganagar",
+    "Tonk",
+    "Udaipur"
+  ],
+
+  "Sikkim": [
+    "Gangtok",
+    "Gyalshing",
+    "Mangan",
+    "Namchi",
+    "Pakyong",
+    "Soreng"
+  ],
+
+  "Tamil Nadu": [
+    "Ariyalur",
+    "Chengalpattu",
+    "Chennai",
+    "Coimbatore",
+    "Cuddalore",
+    "Dharmapuri",
+    "Dindigul",
+    "Erode",
+    "Kallakurichi",
+    "Kancheepuram",
+    "Karur",
+    "Krishnagiri",
+    "Madurai",
+    "Mayiladuthurai",
+    "Nagapattinam",
+    "Namakkal",
+    "The Nilgiris",
+    "Perambalur",
+    "Pudukkottai",
+    "Ramanathapuram",
+    "Ranipet",
+    "Salem",
+    "Sivaganga",
+    "Tenkasi",
+    "Thanjavur",
+    "Theni",
+    "Thoothukudi",
+    "Tiruchirappalli",
+    "Tirunelveli",
+    "Tirupathur",
+    "Tiruppur",
+    "Tiruvallur",
+    "Tiruvannamalai",
+    "Tiruvarur",
+    "Vellore",
+    "Viluppuram",
+    "Virudhunagar"
+  ],
+
+  "Telangana": [
+    "Adilabad",
+    "Bhadradri Kothagudem",
+    "Hanamkonda",
+    "Hyderabad",
+    "Jagtial",
+    "Jangaon",
+    "Jayashankar Bhupalpally",
+    "Jogulamba Gadwal",
+    "Kamareddy",
+    "Karimnagar",
+    "Khammam",
+    "Komaram Bheem",
+    "Mahabubabad",
+    "Mahbubnagar",
+    "Mancherial",
+    "Medak",
+    "Medchal-Malkajgiri",
+    "Mulugu",
+    "Nagarkurnool",
+    "Nalgonda",
+    "Narayanpet",
+    "Nirmal",
+    "Nizamabad",
+    "Peddapalli",
+    "Rajanna Sircilla",
+    "Rangareddy",
+    "Sangareddy",
+    "Siddipet",
+    "Suryapet",
+    "Vikarabad",
+    "Wanaparthy",
+    "Warangal",
+    "Yadadri Bhuvanagiri"
+  ],
+
+  "Tripura": [
+    "Dhalai",
+    "Gomati",
+    "Khowai",
+    "North Tripura",
+    "Sepahijala",
+    "South Tripura",
+    "Unakoti",
+    "West Tripura"
+  ],
+
+  "Uttar Pradesh": [
+    "Agra",
+    "Aligarh",
+    "Ambedkar Nagar",
+    "Amethi",
+    "Amroha",
+    "Auraiya",
+    "Ayodhya",
+    "Azamgarh",
+    "Baghpat",
+    "Bahraich",
+    "Ballia",
+    "Balrampur",
+    "Banda",
+    "Barabanki",
+    "Bareilly",
+    "Basti",
+    "Bhadohi",
+    "Bijnor",
+    "Budaun",
+    "Bulandshahr",
+    "Chandauli",
+    "Chitrakoot",
+    "Deoria",
+    "Etah",
+    "Etawah",
+    "Farrukhabad",
+    "Fatehpur",
+    "Firozabad",
+    "Gautam Buddha Nagar",
+    "Ghaziabad",
+    "Ghazipur",
+    "Gonda",
+    "Gorakhpur",
+    "Hamirpur",
+    "Hapur",
+    "Hardoi",
+    "Hathras",
+    "Jalaun",
+    "Jaunpur",
+    "Jhansi",
+    "Kannauj",
+    "Kanpur Dehat",
+    "Kanpur Nagar",
+    "Kasganj",
+    "Kaushambi",
+    "Kheri",
+    "Kushinagar",
+    "Lalitpur",
+    "Lucknow",
+    "Maharajganj",
+    "Mahoba",
+    "Mainpuri",
+    "Mathura",
+    "Mau",
+    "Meerut",
+    "Mirzapur",
+    "Moradabad",
+    "Muzaffarnagar",
+    "Pilibhit",
+    "Pratapgarh",
+    "Prayagraj",
+    "Raebareli",
+    "Rampur",
+    "Saharanpur",
+    "Sambhal",
+    "Sant Kabir Nagar",
+    "Shahjahanpur",
+    "Shamli",
+    "Shravasti",
+    "Siddharthnagar",
+    "Sitapur",
+    "Sonbhadra",
+    "Sultanpur",
+    "Unnao",
+    "Varanasi"
+  ],
+
+  "Uttarakhand": [
+    "Almora",
+    "Bageshwar",
+    "Chamoli",
+    "Champawat",
+    "Dehradun",
+    "Haridwar",
+    "Nainital",
+    "Pauri Garhwal",
+    "Pithoragarh",
+    "Rudraprayag",
+    "Tehri Garhwal",
+    "Udham Singh Nagar",
+    "Uttarkashi"
+  ],
+
+  "West Bengal": [
+    "Alipurduar",
+    "Bankura",
+    "Paschim Bardhaman",
+    "Purba Bardhaman",
+    "Birbhum",
+    "Cooch Behar",
+    "Darjeeling",
+    "Hooghly",
+    "Howrah",
+    "Jalpaiguri",
+    "Jhargram",
+    "Kalimpong",
+    "Kolkata",
+    "Maldah",
+    "Murshidabad",
+    "Nadia",
+    "North 24 Parganas",
+    "South 24 Parganas",
+    "Paschim Medinipur",
+    "Purba Medinipur",
+    "Uttar Dinajpur",
+    "Dakshin Dinajpur"
+  ]
+
+};
+
+
+/* =========================================================
+   DESTINATION DATA
+   ========================================================= */
+
+const destinations = [
+
+  {
+    name: "Thanjavur Big Temple",
+    state: "Tamil Nadu",
+    district: "Thanjavur",
+    emoji: "🏛️",
+    type: "Historical",
+    description: "Famous Chola-era heritage landmark."
+  },
+
+  {
+    name: "Yercaud",
+    state: "Tamil Nadu",
+    district: "Salem",
+    emoji: "⛰️",
+    type: "Hill Station",
+    description: "Beautiful hill destination in the Shevaroy Hills."
+  },
+
+  {
+    name: "Meenakshi Amman Temple",
+    state: "Tamil Nadu",
+    district: "Madurai",
+    emoji: "🛕",
+    type: "Culture",
+    description: "Iconic historic temple complex of Madurai."
+  },
+
+  {
+    name: "Marina Beach",
+    state: "Tamil Nadu",
+    district: "Chennai",
+    emoji: "🌊",
+    type: "Beach",
+    description: "One of India's best-known urban beaches."
+  },
+
+  {
+    name: "Kanyakumari",
+    state: "Tamil Nadu",
+    district: "Kanniyakumari",
+    emoji: "🌅",
+    type: "Nature",
+    description: "Famous coastal destination at India's southern tip."
+  },
+
+  {
+    name: "Ooty",
+    state: "Tamil Nadu",
+    district: "The Nilgiris",
+    emoji: "🌲",
+    type: "Hill Station",
+    description: "Popular mountain destination in the Nilgiris."
+  },
+
+  {
+    name: "Hampi",
+    state: "Karnataka",
+    district: "Vijayanagara",
+    emoji: "🏺",
+    type: "Historical",
+    description: "Historic ruins and spectacular landscapes."
+  },
+
+  {
+    name: "Goa Beaches",
+    state: "Goa",
+    district: "North Goa",
+    emoji: "🏖️",
+    type: "Beach",
+    description: "Famous beaches, food and nightlife."
+  }
+
+];
+
+
+/* =========================================================
+   TAMIL NADU HISTORICAL DATA
+   ========================================================= */
+
+const tamilNaduPlaces = [
+
+  {
+    name: "Brihadisvara Temple",
+    district: "Thanjavur",
+    emoji: "🏛️",
+    description: "Historic Chola temple and major heritage destination."
+  },
+
+  {
+    name: "Meenakshi Amman Temple",
+    district: "Madurai",
+    emoji: "🛕",
+    description: "One of Madurai's most famous cultural landmarks."
+  },
+
+  {
+    name: "Shore Temple",
+    district: "Chengalpattu",
+    emoji: "🏛️",
+    description: "Historic Pallava monument at Mamallapuram."
+  },
+
+  {
+    name: "Gangaikonda Cholapuram",
+    district: "Ariyalur",
+    emoji: "🏺",
+    description: "Important Chola historical site."
+  },
+
+  {
+    name: "Fort St. George",
+    district: "Chennai",
+    emoji: "🏰",
+    description: "Historic fort and landmark in Chennai."
+  },
+
+  {
+    name: "Yercaud",
+    district: "Salem",
+    emoji: "⛰️",
+    description: "Hill station surrounded by coffee plantations."
+  }
+
+];
+
+
+/* =========================================================
+   CULTURAL EVENTS
+   ========================================================= */
+
+const events = [
+
+  {
+    name: "Pongal",
+    district: "Tamil Nadu",
+    date: "January",
+    emoji: "🌾",
+    description: "Major Tamil harvest festival."
+  },
+
+  {
+    name: "Chithirai Festival",
+    district: "Madurai",
+    date: "April / May",
+    emoji: "🎉",
+    description: "Major cultural festival of Madurai."
+  },
+
+  {
+    name: "Natyanjali Festival",
+    district: "Chidambaram",
+    date: "February / March",
+    emoji: "💃",
+    description: "Classical dance festival associated with Chidambaram."
+  },
+
+  {
+    name: "Mahamaham",
+    district: "Kumbakonam",
+    date: "Periodic",
+    emoji: "🪔",
+    description: "Important cultural and religious gathering."
+  }
+
+];
+
+
+/* =========================================================
+   APPLICATION STATE
+   ========================================================= */
+
+let currentUser = null;
+let map = null;
+let mapMarkers = [];
+
+let currentPostData = null;
+
+
+/* =========================================================
+   STORAGE
+   ========================================================= */
+
+function getUsers() {
+  return JSON.parse(
+    localStorage.getItem("tg_users") || "[]"
+  );
+}
+
+function saveUsers(users) {
+  localStorage.setItem(
+    "tg_users",
+    JSON.stringify(users)
+  );
+}
+
+function getPosts() {
+  return JSON.parse(
+    localStorage.getItem("tg_posts") || "[]"
+  );
+}
+
+function savePosts(posts) {
+  localStorage.setItem(
+    "tg_posts",
+    JSON.stringify(posts)
+  );
+}
+
+function getPlaces() {
+  return JSON.parse(
+    localStorage.getItem("tg_places") || "[]"
+  );
+}
+
+function savePlaces(places) {
+  localStorage.setItem(
+    "tg_places",
+    JSON.stringify(places)
+  );
+}
+
+function getItineraries() {
+  return JSON.parse(
+    localStorage.getItem("tg_itineraries") || "[]"
+  );
+}
+
+function saveItineraries(data) {
+  localStorage.setItem(
+    "tg_itineraries",
+    JSON.stringify(data)
+  );
+}
+
+
+/* =========================================================
+   AUTH
+   ========================================================= */
+
+function showAuth(type) {
+
+  const login = document.getElementById("loginForm");
+  const signup = document.getElementById("signupForm");
+
+  const loginTab = document.getElementById("loginTab");
+  const signupTab = document.getElementById("signupTab");
+
+  if (type === "login") {
+
+    login.style.display = "block";
+    signup.style.display = "none";
+
+    loginTab.className = "btn btn-primary";
+    signupTab.className = "btn";
+
+  } else {
+
+    login.style.display = "none";
+    signup.style.display = "block";
+
+    loginTab.className = "btn";
+    signupTab.className = "btn btn-primary";
+
+  }
+}
+
+
+function signup() {
+
+  const username =
+    document.getElementById("signupUsername").value.trim();
+
+  const password =
+    document.getElementById("signupPassword").value;
+
+  const name =
+    document.getElementById("signupName").value.trim();
+
+  const message =
+    document.getElementById("signupMessage");
+
+  if (!username || !password || !name) {
+
+    message.textContent =
+      "Please fill all fields.";
+
+    return;
+  }
+
+  if (password.length < 4) {
+
+    message.textContent =
+      "Password must contain at least 4 characters.";
+
+    return;
+  }
+
+  const users = getUsers();
+
+  if (
+    users.some(
+      u =>
+        u.username.toLowerCase() ===
+        username.toLowerCase()
+    )
+  ) {
+
+    message.textContent =
+      "Username already exists.";
+
+    return;
+  }
+
+  const user = {
+
+    id: crypto.randomUUID
+      ? crypto.randomUUID()
+      : Date.now().toString(),
+
+    username,
+    password,
+    name,
+
+    bio: "Travel explorer ✈️",
+
+    avatar: "",
+
+    wishlist: [],
+
+    createdAt:
+      new Date().toISOString()
+
+  };
+
+  users.push(user);
+
+  saveUsers(users);
+
+  currentUser = user;
+
+  localStorage.setItem(
+    "tg_current_user",
+    username
+  );
+
+  showApp();
+
+  toast("Welcome to Travel Guider! ✈️");
+}
+
+
+function login() {
+
+  const username =
+    document.getElementById("loginUsername").value.trim();
+
+  const password =
+    document.getElementById("loginPassword").value;
+
+  const message =
+    document.getElementById("loginMessage");
+
+  const users = getUsers();
+
+  const user = users.find(
+    u =>
+      u.username.toLowerCase() ===
+        username.toLowerCase() &&
+      u.password === password
+  );
+
+  if (!user) {
+
+    message.textContent =
+      "Invalid username or password.";
+
+    return;
+  }
+
+  currentUser = user;
+
+  localStorage.setItem(
+    "tg_current_user",
+    user.username
+  );
+
+  showApp();
+
+  toast("Welcome back, " + user.name + "!");
+}
+
+
+function logout() {
+
+  localStorage.removeItem(
+    "tg_current_user"
+  );
+
+  currentUser = null;
+
+  document.getElementById(
+    "app"
+  ).style.display = "none";
+
+  document.getElementById(
+    "authScreen"
+  ).style.display = "flex";
+
+  showAuth("login");
+}
+
+
+/* =========================================================
+   APP START
+   ========================================================= */
+
+function checkLogin() {
+
+  const username =
+    localStorage.getItem(
+      "tg_current_user"
+    );
+
+  if (!username) return;
+
+  const user =
+    getUsers().find(
+      u => u.username === username
+    );
+
+  if (!user) return;
+
+  currentUser = user;
+
+  showApp();
+}
+
+
+function showApp() {
+
+  document.getElementById(
+    "authScreen"
+  ).style.display = "none";
+
+  document.getElementById(
+    "app"
+  ).style.display = "block";
+
+  updateUserUI();
+
+  renderHome();
+  renderExplore();
+  renderPosts();
+  renderWishlist();
+  renderItineraries();
+  renderProfile();
+
+  setTimeout(initMap, 300);
+}
+
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+function navigate(page) {
+
+  document.querySelectorAll(".page")
+    .forEach(p =>
+      p.classList.remove("active")
+    );
+
+  const target =
+    document.getElementById(
+      "page-" + page
+    );
+
+  if (target) {
+    target.classList.add("active");
+  }
+
+  document.querySelectorAll(
+    ".nav-item, .mobile-nav button"
+  ).forEach(btn => {
+
+    btn.classList.toggle(
+      "active",
+      btn.dataset.page === page
+    );
+
+  });
+
+  if (page === "map") {
+
+    setTimeout(() => {
+
+      if (!map) {
+        initMap();
+      } else {
+        map.invalidateSize();
+      }
+
+    }, 200);
+  }
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+}
+
+
+/* =========================================================
+   USER UI
+   ========================================================= */
+
+function updateUserUI() {
+
+  if (!currentUser) return;
+
+  document.getElementById(
+    "topUsername"
+  ).textContent =
+    "@" + currentUser.username;
+
+  const initials =
+    currentUser.name
+      .split(" ")
+      .map(x => x[0])
+      .join("")
+      .slice(0,2)
+      .toUpperCase();
+
+  document.getElementById(
+    "topAvatar"
+  ).textContent = initials;
+}
+
+
+/* =========================================================
+   HOME
+   ========================================================= */
+
+function renderHome() {
+
+  const popular =
+    document.getElementById(
+      "popularGrid"
+    );
+
+  popular.innerHTML =
+    destinations.map(
+      (d, i) => destinationCard(d, i)
+    ).join("");
+
+  const tn =
+    document.getElementById(
+      "tnGrid"
+    );
+
+  tn.innerHTML =
+    tamilNaduPlaces.map(
+      p => `
+      <div class="card">
+
+        <div class="destination-image ${
+          p.district === "Salem"
+            ? "green"
+            : "orange"
+        }">
+          ${p.emoji}
+        </div>
+
+        <div class="card-body">
+
+          <div class="badge">
+            ${p.district}
+          </div>
+
+          <h3>${p.name}</h3>
+
+          <p>
+            ${p.description}
+          </p>
+
+          <div class="card-actions">
+
+            <button
+              class="small-btn"
+              onclick="addWishlist('${escapeJS(p.name)}','Tamil Nadu','${escapeJS(p.district)}')">
+              ❤️ Save
+            </button>
+
+            <button
+              class="small-btn"
+              onclick="focusDestination('${escapeJS(p.name)}')">
+              🗺️ Map
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+      `
+    ).join("");
+
+  const eventGrid =
+    document.getElementById(
+      "eventGrid"
+    );
+
+  eventGrid.innerHTML =
+    events.map(
+      e => `
+      <div class="card">
+
+        <div class="destination-image purple">
+          ${e.emoji}
+        </div>
+
+        <div class="card-body">
+
+          <div class="badge">
+            ${e.date}
+          </div>
+
+          <h3>${e.name}</h3>
+
+          <p>
+            📍 ${e.district}
+          </p>
+
+          <p>
+            ${e.description}
+          </p>
+
+          <button
+            class="small-btn"
+            onclick="createEventItinerary('${escapeJS(e.name)}')">
+            🗓️ Add to Trip
+          </button>
+
+        </div>
+
+      </div>
+      `
+    ).join("");
+}
+
+
+function destinationCard(d, index) {
+
+  const colors =
+    ["", "green", "orange", "purple", "blue"];
+
+  return `
+
+    <div class="card">
+
+      <div class="destination-image ${
+        colors[index % colors.length]
+      }">
+
+        ${d.emoji}
+
+      </div>
+
+      <div class="card-body">
+
+        <div class="badge">
+          ${d.type}
+        </div>
+
+        <h3>${d.name}</h3>
+
+        <p>
+          ${d.description}
+        </p>
+
+        <p>
+          📍 ${d.district}, ${d.state}
+        </p>
+
+        <div class="card-actions">
+
+          <button
+            class="small-btn"
+            onclick="addWishlist(
+              '${escapeJS(d.name)}',
+              '${escapeJS(d.state)}',
+              '${escapeJS(d.district)}'
+            )">
+            ❤️ Save
+          </button>
+
+          <button
+            class="small-btn"
+            onclick="focusDestination('${escapeJS(d.name)}')">
+            🗺️ Map
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  `;
+}
+
+
+/* =========================================================
+   EXPLORE STATES
+   ========================================================= */
+
+function renderExplore() {
+
+  document.getElementById(
+    "stateCount"
+  ).textContent =
+    Object.keys(indiaStates).length +
+    " states";
+
+  renderStates();
+}
+
+
+function renderStates() {
+
+  const container =
+    document.getElementById(
+      "exploreContent"
+    );
+
+  container.innerHTML = `
+
+    <div class="grid">
+
+      ${
+        Object.keys(indiaStates)
+          .map(
+            (state, index) => `
+
+          <div
+            class="card state-card"
+            onclick="showDistricts('${escapeJS(state)}')">
+
+            <div class="destination-image ${
+              [
+                "green",
+                "orange",
+                "purple",
+                "blue"
+              ][index % 4]
+            }">
+
+              ${stateEmoji(state)}
+
+            </div>
+
+            <div class="card-body">
+
+              <div class="badge">
+                STATE
+              </div>
+
+              <h3>
+                ${state}
+              </h3>
+
+              <p>
+                ${
+                  indiaStates[state].length
+                }
+                districts
+              </p>
+
+              <button class="small-btn">
+                Explore Districts →
+              </button>
+
+            </div>
+
+          </div>
+
+        `
+          )
+          .join("")
+      }
+
+    </div>
+
+  `;
+}
+
+
+function showDistricts(state) {
+
+  const districts =
+    indiaStates[state];
+
+  const container =
+    document.getElementById(
+      "exploreContent"
+    );
+
+  container.innerHTML = `
+
+    <div class="breadcrumb">
+
+      <button
+        onclick="renderStates()">
+        India
+      </button>
+
+      <span>›</span>
+
+      <strong>${state}</strong>
+
+    </div>
+
+    <div class="section-title">
+
+      <h2>${state}</h2>
+
+      <small>
+        ${districts.length} districts
+      </small>
+
+    </div>
+
+    <div class="grid">
+
+      ${
+        districts
+          .map(
+            (district, i) => `
+
+          <div class="card">
+
+            <div class="destination-image ${
+              [
+                "",
+                "green",
+                "orange",
+                "purple",
+                "blue"
+              ][i % 5]
+            }">
+
+              ${districtEmoji(district)}
+
+            </div>
+
+            <div class="card-body">
+
+              <div class="badge">
+                ${state}
+              </div>
+
+              <h3>
+                ${district}
+              </h3>
+
+              <p>
+                Discover attractions,
+                food, culture and local
+                experiences.
+              </p>
+
+              <div class="card-actions">
+
+                <button
+                  class="small-btn"
+                  onclick="districtExplore(
+                    '${escapeJS(state)}',
+                    '${escapeJS(district)}'
+                  )">
+                  Explore
+                </button>
+
+                <button
+                  class="small-btn"
+                  onclick="addWishlist(
+                    '${escapeJS(district)}',
+                    '${escapeJS(state)}',
+                    '${escapeJS(district)}'
+                  )">
+                  ❤️ Save
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        `
+          )
+          .join("")
+      }
+
+    </div>
+
+  `;
+}
+
+
+function districtExplore(state, district) {
+
+  const matching =
+    destinations.filter(
+      d =>
+        d.state === state &&
+        d.district === district
+    );
+
+  if (matching.length) {
+
+    navigate("home");
+
+    setTimeout(() => {
+
+      alert(
+        matching
+          .map(
+            d =>
+              d.name +
+              "\n" +
+              d.description
+          )
+          .join("\n\n")
+      );
+
+    }, 200);
+
+  } else {
+
+    openAddPlaceForLocation(
+      state,
+      district
+    );
+
+  }
+}
+
+
+function openAddPlaceForLocation(
+  state,
+  district
+) {
+
+  navigate("map");
+
+  document.getElementById(
+    "placeName"
+  ).value =
+    district + " favourite place";
+
+  document.getElementById(
+    "placeDescription"
+  ).value =
+    "Add your favourite place in " +
+    district +
+    ", " +
+    state;
+
+  openModal("addPlaceModal");
+}
+
+
+/* =========================================================
+   EMOJIS
+   ========================================================= */
+
+function stateEmoji(state) {
+
+  const emojis = {
+    "Tamil Nadu": "🏛️",
+    "Kerala": "🌴",
+    "Karnataka": "🏺",
+    "Goa": "🏖️",
+    "Rajasthan": "🏰",
+    "Himachal Pradesh": "🏔️",
+    "Uttarakhand": "⛰️",
+    "Maharashtra": "🌆",
+    "Gujarat": "🦁",
+    "West Bengal": "🐯",
+    "Odisha": "🛕",
+    "Punjab": "🌾",
+    "Assam": "🌿"
+  };
+
+  return emojis[state] || "🇮🇳";
+}
+
+
+function districtEmoji(district) {
+
+  const name =
+    district.toLowerCase();
+
+  if (
+    name.includes("beach") ||
+    name.includes("coastal")
+  ) return "🌊";
+
+  if (
+    name.includes("hill") ||
+    name.includes("nilgiri")
+  ) return "⛰️";
+
+  if (
+    name.includes("city") ||
+    name.includes("urban")
+  ) return "🏙️";
+
+  if (
+    name.includes("forest")
+  ) return "🌳";
+
+  return "📍";
+}
+
+
+/* =========================================================
+   WISHLIST
+   ========================================================= */
+
+function addWishlist(
+  name,
+  state,
+  district
+) {
+
+  const users = getUsers();
+
+  const index =
+    users.findIndex(
+      u => u.username === currentUser.username
+    );
+
+  if (index === -1) return;
+
+  if (!users[index].wishlist) {
+    users[index].wishlist = [];
+  }
+
+  const exists =
+    users[index].wishlist.some(
+      x => x.name === name
+    );
+
+  if (!exists) {
+
+    users[index].wishlist.push({
+      id: Date.now(),
+      name,
+      state,
+      district,
+      createdAt:
+        new Date().toISOString()
+    });
+
+    saveUsers(users);
+
+    currentUser = users[index];
+
+    renderWishlist();
+
+    toast("❤️ Added to wishlist");
+
+  } else {
+
+    toast("Already in your wishlist");
+
+  }
+}
+
+
+function removeWishlist(id) {
+
+  const users = getUsers();
+
+  const index =
+    users.findIndex(
+      u => u.username === currentUser.username
+    );
+
+  if (index === -1) return;
+
+  users[index].wishlist =
+    (users[index].wishlist || [])
+      .filter(x => x.id !== id);
+
+  saveUsers(users);
+
+  currentUser = users[index];
+
+  renderWishlist();
+
+  toast("Removed from wishlist");
+}
+
+
+function renderWishlist() {
+
+  const grid =
+    document.getElementById(
+      "wishlistGrid"
+    );
+
+  const list =
+    currentUser?.wishlist || [];
+
+  if (!list.length) {
+
+    grid.innerHTML = `
+      <div class="empty">
+        <div style="font-size:45px">❤️</div>
+        <h3>Your wishlist is empty</h3>
+        <p>
+          Save places you want to visit.
+        </p>
+      </div>
+    `;
+
+    return;
+  }
+
+  grid.innerHTML =
+    list.map(
+      item => `
+
+      <div class="card">
+
+        <div class="destination-image blue">
+          ❤️
+        </div>
+
+        <div class="card-body">
+
+          <div class="badge">
+            ${item.state}
+          </div>
+
+          <h3>
+            ${item.name}
+          </h3>
+
+          <p>
+            📍 ${item.district}
+          </p>
+
+          <button
+            class="small-btn"
+            onclick="removeWishlist(${item.id})">
+            Remove
+          </button>
+
+        </div>
+
+      </div>
+
+    `
+    ).join("");
+}
+
+
+/* =========================================================
+   ITINERARIES
+   ========================================================= */
+
+function createItinerary() {
+
+  const name =
+    document.getElementById(
+      "tripName"
+    ).value.trim();
+
+  const destination =
+    document.getElementById(
+      "tripDestination"
+    ).value.trim();
+
+  const date =
+    document.getElementById(
+      "tripDate"
+    ).value;
+
+  const notes =
+    document.getElementById(
+      "tripNotes"
+    ).value.trim();
+
+  if (!name || !destination) {
+
+    toast("Enter trip name and destination");
+
+    return;
+  }
+
+  const trips =
+    getItineraries();
+
+  trips.push({
+
+    id: Date.now(),
+
+    username:
+      currentUser.username,
+
+    name,
+    destination,
+    date,
+    notes,
+
+    createdAt:
+      new Date().toISOString()
+
+  });
+
+  saveItineraries(trips);
+
+  closeModal("itineraryModal");
+
+  document.getElementById(
+    "tripName"
+  ).value = "";
+
+  document.getElementById(
+    "tripDestination"
+  ).value = "";
+
+  document.getElementById(
+    "tripDate"
+  ).value = "";
+
+  document.getElementById(
+    "tripNotes"
+  ).value = "";
+
+  renderItineraries();
+
+  toast("🗓️ Trip saved!");
+
+}
+
+
+function createEventItinerary(name) {
+
+  document.getElementById(
+    "tripName"
+  ).value =
+    name;
+
+  document.getElementById(
+    "tripDestination"
+  ).value =
+    "Tamil Nadu";
+
+  openModal("itineraryModal");
+}
+
+
+function deleteItinerary(id) {
+
+  const trips =
+    getItineraries()
+      .filter(
+        x =>
+          !(
+            x.id === id &&
+            x.username === currentUser.username
+          )
+      );
+
+  saveItineraries(trips);
+
+  renderItineraries();
+
+  toast("Trip deleted");
+}
+
+
+function renderItineraries() {
+
+  const grid =
+    document.getElementById(
+      "itineraryGrid"
+    );
+
+  const trips =
+    getItineraries()
+      .filter(
+        x =>
+          x.username ===
+          currentUser.username
+      );
+
+  if (!trips.length) {
+
+    grid.innerHTML = `
+      <div class="empty">
+
+        <div style="font-size:45px">
+          🗓️
+        </div>
+
+        <h3>No saved itineraries</h3>
+
+        <p>
+          Create your first travel plan.
+        </p>
+
+      </div>
+    `;
+
+    return;
+  }
+
+  grid.innerHTML =
+    trips.map(
+      trip => `
+
+      <div class="card">
+
+        <div class="destination-image green">
+          🧭
+        </div>
+
+        <div class="card-body">
+
+          <div class="badge">
+            SAVED TRIP
+          </div>
+
+          <h3>
+            ${trip.name}
+          </h3>
+
+          <p>
+            📍 ${trip.destination}
+          </p>
+
+          ${
+            trip.date
+              ? `<p>📅 ${trip.date}</p>`
+              : ""
+          }
+
+          <p>
+            ${trip.notes || "No notes added."}
+          </p>
+
+          <div class="card-actions">
+
+            <button
+              class="small-btn"
+              onclick="openTripMap('${escapeJS(trip.destination)}')">
+              🗺️ Map
+            </button>
+
+            <button
+              class="small-btn"
+              onclick="deleteItinerary(${trip.id})">
+              🗑️ Delete
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    `
+    ).join("");
+}
+
+
+function openTripMap(destination) {
+
+  navigate("map");
+
+  setTimeout(() => {
+
+    searchMap(destination);
+
+  }, 500);
+
+}
+
+
+/* =========================================================
+   POSTS / PHOTO / VIDEO
+   ========================================================= */
+
+function previewPostFile(event) {
+
+  const file =
+    event.target.files[0];
+
+  if (!file) return;
+
+  const reader =
+    new FileReader();
+
+  reader.onload = function(e) {
+
+    currentPostData = {
+
+      data: e.target.result,
+
+      type:
+        file.type.startsWith("video/")
+          ? "video"
+          : "image"
+
+    };
+
+    const preview =
+      document.getElementById(
+        "postPreview"
+      );
+
+    if (
+      currentPostData.type ===
+      "video"
+    ) {
+
+      preview.innerHTML = `
+        <video
+          src="${currentPostData.data}"
+          controls
+          style="
+            width:100%;
+            max-height:300px;
+            border-radius:15px;
+            margin-bottom:15px
+          ">
+        </video>
+      `;
+
+    } else {
+
+      preview.innerHTML = `
+        <img
+          src="${currentPostData.data}"
+          style="
+            width:100%;
+            max-height:300px;
+            object-fit:cover;
+            border-radius:15px;
+            margin-bottom:15px
+          ">
+      `;
+
+    }
+
+  };
+
+  reader.readAsDataURL(file);
+}
+
+
+function createPost() {
+
+  if (!currentPostData) {
+
+    toast("Please select a photo or video");
+
+    return;
+  }
+
+  const location =
+    document.getElementById(
+      "postLocation"
+    ).value.trim();
+
+  const caption =
+    document.getElementById(
+      "postCaption"
+    ).value.trim();
+
+  const posts =
+    getPosts();
+
+  posts.unshift({
+
+    id: Date.now(),
+
+    username:
+      currentUser.username,
+
+    name:
+      currentUser.name,
+
+    media:
+      currentPostData.data,
+
+    mediaType:
+      currentPostData.type,
+
+    location:
+      location || "My Travel",
+
+    caption:
+      caption || "Amazing travel experience! ✈️",
+
+    likes: 0,
+
+    createdAt:
+      new Date().toISOString()
+
+  });
+
+  try {
+
+    savePosts(posts);
+
+  } catch (error) {
+
+    toast(
+      "File is too large for browser storage. Try a smaller image/video."
+    );
+
+    return;
+  }
+
+  currentPostData = null;
+
+  document.getElementById(
+    "postFile"
+  ).value = "";
+
+  document.getElementById(
+    "postLocation"
+  ).value = "";
+
+  document.getElementById(
+    "postCaption"
+  ).value = "";
+
+  document.getElementById(
+    "postPreview"
+  ).innerHTML = "";
+
+  closeModal("postModal");
+
+  renderPosts();
+
+  toast("📸 Experience posted!");
+
+}
+
+
+function renderPosts() {
+
+  const grid =
+    document.getElementById(
+      "postsGrid"
+    );
+
+  const posts =
+    getPosts();
+
+  if (!posts.length) {
+
+    grid.innerHTML = `
+      <div class="empty">
+
+        <div style="font-size:45px">
+          📸
+        </div>
+
+        <h3>No travel posts yet</h3>
+
+        <p>
+          Upload your first travel memory.
+        </p>
+
+      </div>
+    `;
+
+    return;
+  }
+
+  grid.innerHTML =
+    posts.map(
+      post => `
+
+      <article class="post">
+
+        ${
+          post.mediaType === "video"
+
+          ?
+
+          `<video
+            class="post-media"
+            src="${post.media}"
+            controls>
+          </video>`
+
+          :
+
+          `<img
+            class="post-media"
+            src="${post.media}"
+            alt="Travel experience">
+          `
+        }
+
+        <div class="post-content">
+
+          <div class="post-user">
+
+            <div class="avatar">
+              ${post.username
+                .slice(0,2)
+                .toUpperCase()}
+            </div>
+
+            <div>
+
+              <strong>
+                @${post.username}
+              </strong>
+
+              <div
+                style="
+                  color:#75858b;
+                  font-size:11px
+                ">
+                ${post.location}
+              </div>
+
+            </div>
+
+          </div>
+
+          <p style="color:#c7d0d4">
+            ${post.caption}
+          </p>
+
+          <div class="post-actions">
+
+            <button
+              class="icon-btn"
+              onclick="likePost(${post.id})">
+              ❤️
+            </button>
+
+            <span
+              style="
+                display:flex;
+                align-items:center;
+                color:#9aa8ad
+              ">
+              ${post.likes || 0} likes
+            </span>
+
+          </div>
+
+        </div>
+
+      </article>
+
+    `
+    ).join("");
+}
+
+
+function likePost(id) {
+
+  const posts =
+    getPosts();
+
+  const post =
+    posts.find(
+      x => x.id === id
+    );
+
+  if (!post) return;
+
+  post.likes =
+    (post.likes || 0) + 1;
+
+  savePosts(posts);
+
+  renderPosts();
+
+}
+
+
+/* =========================================================
+   ADD USER PLACE
+   ========================================================= */
+
+function addPlace() {
+
+  const name =
+    document.getElementById(
+      "placeName"
+    ).value.trim();
+
+  const category =
+    document.getElementById(
+      "placeCategory"
+    ).value;
+
+  const description =
+    document.getElementById(
+      "placeDescription"
+    ).value.trim();
+
+  const lat =
+    parseFloat(
+      document.getElementById(
+        "placeLat"
+      ).value
+    );
+
+  const lng =
+    parseFloat(
+      document.getElementById(
+        "placeLng"
+      ).value
+    );
+
+  if (!name) {
+
+    toast("Enter a place name");
+
+    return;
+  }
+
+  if (
+    Number.isNaN(lat) ||
+    Number.isNaN(lng)
+  ) {
+
+    toast(
+      "Enter valid latitude and longitude"
+    );
+
+    return;
+  }
+
+  const places =
+    getPlaces();
+
+  places.push({
+
+    id: Date.now(),
+
+    name,
+    category,
+    description,
+
+    lat,
+    lng,
+
+    createdBy:
+      currentUser.username,
+
+    createdAt:
+      new Date().toISOString()
+
+  });
+
+  savePlaces(places);
+
+  closeModal("addPlaceModal");
+
+  document.getElementById(
+    "placeName"
+  ).value = "";
+
+  document.getElementById(
+    "placeDescription"
+  ).value = "";
+
+  document.getElementById(
+    "placeLat"
+  ).value = "";
+
+  document.getElementById(
+    "placeLng"
+  ).value = "";
+
+  addUserPlacesToMap();
+
+  toast("📍 Place added to Travel Guider!");
+
+}
+
+
+/* =========================================================
+   PROFILE
+   ========================================================= */
+
+function renderProfile() {
+
+  const container =
+    document.getElementById(
+      "profileContent"
+    );
+
+  const posts =
+    getPosts()
+      .filter(
+        p =>
+          p.username ===
+          currentUser.username
+      );
+
+  const trips =
+    getItineraries()
+      .filter(
+        t =>
+          t.username ===
+          currentUser.username
+      );
+
+  const wishlist =
+    currentUser.wishlist || [];
+
+  const initials =
+    currentUser.name
+      .split(" ")
+      .map(x => x[0])
+      .join("")
+      .slice(0,2)
+      .toUpperCase();
+
+  container.innerHTML = `
+
+    <div class="profile-header">
+
+      <div class="profile-big">
+        ${
+          currentUser.avatar
+          ? `<img src="${currentUser.avatar}">`
+          : initials
+        }
+      </div>
+
+      <div style="flex:1">
+
+        <h2 style="margin:0">
+          ${currentUser.name}
+        </h2>
+
+        <p style="color:#00e5ff">
+          @${currentUser.username}
+        </p>
+
+        <p style="color:#91a1a8">
+          ${currentUser.bio}
+        </p>
+
+        <div class="profile-stats">
+
+          <div class="stat">
+            <strong>${posts.length}</strong>
+            <span>Posts</span>
+          </div>
+
+          <div class="stat">
+            <strong>${wishlist.length}</strong>
+            <span>Wishlist</span>
+          </div>
+
+          <div class="stat">
+            <strong>${trips.length}</strong>
+            <span>Trips</span>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div class="section-title">
+      <h2>My Travel Memories</h2>
+    </div>
+
+    ${
+      posts.length
+      ?
+      `<div class="post-grid">
+        ${
+          posts.map(
+            p => `
+              <div class="post">
+
+                ${
+                  p.mediaType === "video"
+                  ?
+                  `<video
+                    class="post-media"
+                    src="${p.media}"
+                    controls>
+                  </video>`
+                  :
+                  `<img
+                    class="post-media"
+                    src="${p.media}">
+                  `
+                }
+
+                <div class="post-content">
+
+                  <strong>
+                    ${p.location}
+                  </strong>
+
+                  <p>
+                    ${p.caption}
+                  </p>
+
+                </div>
+
+              </div>
+            `
+          ).join("")
+        }
+      </div>`
+      :
+      `
+      <div class="empty">
+        No memories uploaded yet.
+      </div>
+      `
+    }
+
+  `;
+}
+
+
+/* =========================================================
+   MAP
+   ========================================================= */
+
+function initMap() {
+
+  if (map) {
+
+    map.invalidateSize();
+
+    return;
+  }
+
+  map =
+    L.map("map")
+      .setView(
+        [20.5937, 78.9629],
+        5
+      );
+
+  L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+      maxZoom: 19,
+      attribution:
+        "&copy; OpenStreetMap contributors"
+    }
+  ).addTo(map);
+
+  addBuiltInMarkers();
+
+  addUserPlacesToMap();
+
+}
+
+
+function addBuiltInMarkers() {
+
+  if (!map) return;
+
+  destinations.forEach(
+    d => {
+
+      const coords =
+        destinationCoordinates[d.name];
+
+      if (!coords) return;
+
+      const marker =
+        L.marker(coords)
+          .addTo(map)
+          .bindPopup(`
+            <strong>${d.name}</strong>
+            <br>
+            ${d.description}
+            <br><br>
+            <button
+              onclick="addWishlist(
+                '${escapeJS(d.name)}',
+                '${escapeJS(d.state)}',
+                '${escapeJS(d.district)}'
+              )">
+              ❤️ Save
+            </button>
+          `);
+
+      mapMarkers.push(marker);
+
+    }
+  );
+
+}
+
+
+function addUserPlacesToMap() {
+
+  if (!map) return;
+
+  getPlaces().forEach(
+    p => {
+
+      const marker =
+        L.marker(
+          [p.lat, p.lng]
+        )
+        .addTo(map)
+        .bindPopup(`
+          <strong>${p.name}</strong>
+          <br>
+          ${p.category}
+          <br>
+          ${p.description || ""}
+          <br><br>
+          Added by @${p.createdBy}
+        `);
+
+      mapMarkers.push(marker);
+
+    }
+  );
+
+}
+
+
+const destinationCoordinates = {
+
+  "Thanjavur Big Temple":
+    [10.7828, 79.1318],
+
+  "Yercaud":
+    [11.7753, 78.2090],
+
+  "Meenakshi Amman Temple":
+    [9.9195, 78.1193],
+
+  "Marina Beach":
+    [13.0499, 80.2824],
+
+  "Kanyakumari":
+    [8.0883, 77.5385],
+
+  "Ooty":
+    [11.4102, 76.6950],
+
+  "Hampi":
+    [15.3350, 76.4600],
+
+  "Goa Beaches":
+    [15.2993, 74.1240]
+
+};
+
+
+function showIndia() {
+
+  if (!map) initMap();
+
+  map.setView(
+    [20.5937, 78.9629],
+    5
+  );
+
+}
+
+
+function focusDestination(name) {
+
+  navigate("map");
+
+  setTimeout(() => {
+
+    const coords =
+      destinationCoordinates[name];
+
+    if (!coords) {
+
+      toast(
+        "Map coordinates not available for this place yet."
+      );
+
+      return;
+    }
+
+    map.setView(
+      coords,
+      13
+    );
+
+    L.popup()
+      .setLatLng(coords)
+      .setContent(
+        "<strong>" +
+        name +
+        "</strong>"
+      )
+      .openOn(map);
+
+  }, 500);
+
+}
+
+
+function openTripMap(destination) {
+
+  navigate("map");
+
+  setTimeout(() => {
+
+    searchMap(destination);
+
+  }, 500);
+
+}
+
+
+function searchMap(query) {
+
+  const match =
+    Object.keys(
+      destinationCoordinates
+    ).find(
+      name =>
+        name.toLowerCase()
+          .includes(
+            query.toLowerCase()
+          )
+    );
+
+  if (match) {
+
+    const coords =
+      destinationCoordinates[match];
+
+    map.setView(
+      coords,
+      12
+    );
+
+    L.popup()
+      .setLatLng(coords)
+      .setContent(
+        "<strong>" +
+        match +
+        "</strong>"
+      )
+      .openOn(map);
+
+  } else {
+
+    toast(
+      "Use the Add Place option to add exact coordinates."
+    );
+
+  }
+
+}
+
+
+function findMyLocation() {
+
+  if (!navigator.geolocation) {
+
+    toast(
+      "Geolocation is not supported."
+    );
+
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+
+    position => {
+
+      const lat =
+        position.coords.latitude;
+
+      const lng =
+        position.coords.longitude;
+
+      map.setView(
+        [lat,lng],
+        14
+      );
+
+      L.marker(
+        [lat,lng]
+      )
+      .addTo(map)
+      .bindPopup(
+        "📍 You are here"
+      )
+      .openPopup();
+
+    },
+
+    () => {
+
+      toast(
+        "Location permission was not allowed."
+      );
+
+    }
+
+  );
+
+}
+
+
+/* =========================================================
+   GLOBAL SEARCH
+   ========================================================= */
+
+function globalSearch() {
+
+  const input =
+    document.getElementById(
+      "globalSearch"
+    );
+
+  const query =
+    input.value
+      .trim()
+      .toLowerCase();
+
+  if (!query) return;
+
+  const stateMatch =
+    Object.keys(indiaStates)
+      .find(
+        s =>
+          s.toLowerCase()
+            .includes(query)
+      );
+
+  if (stateMatch) {
+
+    navigate("explore");
+
+    setTimeout(() => {
+
+      showDistricts(
+        stateMatch
+      );
+
+    }, 100);
+
+    return;
+  }
+
+  const destinationMatch =
+    destinations.find(
+      d =>
+        d.name.toLowerCase()
+          .includes(query) ||
+        d.district.toLowerCase()
+          .includes(query)
+    );
+
+  if (destinationMatch) {
+
+    focusDestination(
+      destinationMatch.name
+    );
+
+    return;
+  }
+
+  for (
+    const state in indiaStates
+  ) {
+
+    const district =
+      indiaStates[state]
+        .find(
+          d =>
+            d.toLowerCase()
+              .includes(query)
+        );
+
+    if (district) {
+
+      navigate("explore");
+
+      setTimeout(() => {
+
+        showDistricts(state);
+
+      }, 100);
+
+      return;
+    }
+
+  }
+
+  const event =
+    events.find(
+      e =>
+        e.name.toLowerCase()
+          .includes(query)
+    );
+
+  if (event) {
+
+    navigate("home");
+
+    toast(
+      event.name +
+      " — " +
+      event.date
+    );
+
+    return;
+  }
+
+  toast(
+    "No matching destination found."
+  );
+
+}
+
+
+/* =========================================================
+   MODALS
+   ========================================================= */
+
+function openModal(id) {
+
+  document.getElementById(
+    id
+  ).classList.add("show");
+
+}
+
+
+function closeModal(id) {
+
+  document.getElementById(
+    id
+  ).classList.remove("show");
+
+}
+
+
+document.querySelectorAll(
+  ".modal"
+).forEach(modal => {
+
+  modal.addEventListener(
+    "click",
+    event => {
+
+      if (
+        event.target === modal
+      ) {
+
+        modal.classList.remove(
+          "show"
+        );
+
+      }
+
+    }
+  );
+
+});
+
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+
+function toast(message) {
+
+  const el =
+    document.getElementById(
+      "toast"
+    );
+
+  el.textContent =
+    message;
+
+  el.classList.add(
+    "show"
+  );
+
+  clearTimeout(
+    window.toastTimer
+  );
+
+  window.toastTimer =
+    setTimeout(() => {
+
+      el.classList.remove(
+        "show"
+      );
+
+    }, 2600);
+
+}
+
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+
+function escapeJS(value) {
+
+  return String(value)
+    .replace(/\\/g, "\\\\")
+    .replace(/'/g, "\\'")
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r");
+
+}
+
+
+/* =========================================================
+   START APPLICATION
+   ========================================================= */
+
+window.addEventListener(
+  "DOMContentLoaded",
+  () => {
+
+    checkLogin();
+
+  }
+);
+
+</script>
+
+</body>
+</html>
